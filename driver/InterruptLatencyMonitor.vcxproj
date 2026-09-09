@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{12345678-1234-1234-1234-123456789ABC}</ProjectGuid>
+    <TemplateGuid>{a0534e83-4c7a-4b7d-8a3a-123456789012}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
+    <Configuration>Release</Configuration>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+    <RootNamespace>InterruptLatencyMonitor</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <ProjectName>InterruptLatencyMonitor</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+    <UseBufferOverflowFastFailK>false</UseBufferOverflowFastFailK>
+    <BufferOverflowFastFailKPath></BufferOverflowFastFailKPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>WDM</DriverType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km;C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.35;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64;C:\Program Files (x86)\Windows Kits\10\Lib\wdf\kmdf\x64\1.35;$(LibraryPath)</LibraryPath>
+    <ExcludeLibrariesFromWDK>BufferOverflowFastFailK.lib</ExcludeLibrariesFromWDK>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/NODEFAULTLIB:BufferOverflowFastFailK.lib /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/NODEFAULTLIB:BufferOverflowFastFailK.lib /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km";"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared";"C:\Program Files (x86)\Windows Kits\10\Include\wdf\kmdf\1.15";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <CompileAs>Default</CompileAs>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <CallingConvention>Cdecl</CallingConvention>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ntoskrnl.lib;hal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(AdditionalDependencies.Replace('BufferOverflowFastFailK.lib;', '').Replace(';BufferOverflowFastFailK.lib', '').Replace('BufferOverflowFastFailK.lib', ''))</AdditionalDependencies>
+      <AdditionalLibraryDirectories>"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\km\x64\";%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Native</SubSystem>
+      <EntryPoint>GsDriverEntry</EntryPoint>
+      <DriverType>WDM</DriverType>
+      <IgnoreSpecificDefaultLibraries>BufferOverflowFastFailK.lib;wmilib.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/NODEFAULTLIB:BufferOverflowFastFailK.lib /IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
+      <StackReserveSize>1048576</StackReserveSize>
+      <StackCommitSize>4096</StackCommitSize>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+    <Inf>
+      <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
+    </Inf>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="InterruptLatencyMonitor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="InterruptLatencyMonitor.inf" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sources" />
+    <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Driver Files">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789DEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Headers">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Sources">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Inf">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789004}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="InterruptLatencyMonitor.h">
+      <Filter>Driver Files\Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="InterruptLatencyMonitor.c">
+      <Filter>Driver Files\Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="InterruptLatencyMonitor.inf">
+      <Filter>Driver Files\Inf</Filter>
+    </Inf>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sources">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="Makefile">
+      <Filter>Build Files</Filter>
+    </None>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VCTargetsPath)\BuildCustomizations\WDK.targets" Condition="Exists('$(VCTargetsPath)\BuildCustomizations\WDK.targets')" />
+  <Target Name="RemoveBufferOverflowFastFailKFromAdditionalDeps" BeforeTargets="Link">
+    <ItemGroup>
+      <_AdditionalDependencies Remove="BufferOverflowFastFailK.lib" />
+      <_AdditionalDependencies Remove="%(AdditionalDependencies)" Condition="'%(Identity)' == 'BufferOverflowFastFailK.lib'" />
+    </ItemGroup>
+  </Target>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

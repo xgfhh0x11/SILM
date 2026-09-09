@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Driver Files">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789DEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Headers">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Sources">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files\Inf">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{12345678-1234-1234-1234-123456789004}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="InterruptLatencyMonitor.h">
+      <Filter>Driver Files\Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="InterruptLatencyMonitor.c">
+      <Filter>Driver Files\Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="InterruptLatencyMonitor.inf">
+      <Filter>Driver Files\Inf</Filter>
+    </Inf>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sources">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="Makefile">
+      <Filter>Build Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
+

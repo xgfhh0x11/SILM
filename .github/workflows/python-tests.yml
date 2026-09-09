@@ -1,0 +1,59 @@
+name: Python tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r gui/requirements.txt
+          pip install -r tests/requirements.txt
+
+      - name: Run pytest
+        run: python -m pytest tests/ -v
+
+      - name: Smoke-test sample trace generator
+        run: |
+          python scripts/generate_sample_trace.py \
+              --out /tmp/smoke.silm-trace \
+              --duration 1 \
+              --cpus 2 \
+              --spike-at 0.5
+          python -c "import sys; sys.path.insert(0, 'gui'); from trace_parser import read_trace; h, r = read_trace('/tmp/smoke.silm-trace'); print(f'header.cpu_count={h.cpu_count}, records={len(r)}'); assert len(r) == 8000"
+
+      - name: Verify committed demo trace is parseable
+        run: |
+          python -c "import sys; sys.path.insert(0, 'gui'); from trace_parser import read_trace; h, r = read_trace('examples/demo_trace.silm-trace'); assert h.cpu_count == 2 and len(r) == 800, f'demo trace integrity broken: cpus={h.cpu_count} records={len(r)}'"
+
+      - name: Verify microarch witness detects the shipped anomaly
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'gui')
+          from trace_parser import read_trace
+          from microarch_witness import MicroarchWitness
+          _, records = read_trace('examples/microarch_demo.silm-trace')
+          w = MicroarchWitness(threshold_mads=3.0)
+          ratios = w.compute_ratios(records)
+          anomalies = w.detect_anomalies(ratios)
+          assert anomalies, 'microarch witness failed to flag the shipped anomaly window'
+          print(f'OK: {len(anomalies)} anomalies detected; baseline={w.baseline(ratios)[0]}')
+          "

@@ -1,0 +1,64 @@
+;
+; Interrupt Latency Monitor Driver Installation File
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%ManufacturerName%
+DriverVer=01/01/2024,0.1.0.0
+CatalogFile=InterruptLatencyMonitor.cat
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+InterruptLatencyMonitor_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+InterruptLatencyMonitor.sys = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64
+
+[Standard.NTamd64]
+%InterruptLatencyMonitor.DeviceDesc%=InterruptLatencyMonitor_Device, Root\InterruptLatencyMonitor
+
+[InterruptLatencyMonitor_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+InterruptLatencyMonitor.sys
+
+;-------------- Service installation
+[InterruptLatencyMonitor_Device.NT.Services]
+AddService = InterruptLatencyMonitor,%SPSVCINST_ASSOCSERVICE%, InterruptLatencyMonitor_Service_Inst
+
+; -------------- InterruptLatencyMonitor_Service_Inst
+[InterruptLatencyMonitor_Service_Inst]
+DisplayName    = %InterruptLatencyMonitor.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\InterruptLatencyMonitor.sys
+
+[InterruptLatencyMonitor_Device.NT.Wdf]
+KmdfService =  InterruptLatencyMonitor, InterruptLatencyMonitor_wdfsect
+
+[InterruptLatencyMonitor_wdfsect]
+KmdfLibraryVersion = 1.15
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Your Company Name"
+DiskName = "Interrupt Latency Monitor Installation Disk"
+InterruptLatencyMonitor.DeviceDesc = "Interrupt Latency Monitor Driver"
+InterruptLatencyMonitor.SVCDESC = "Interrupt Latency Monitor Service"
+

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WDKPath Condition="'$(WDKPath)' == ''">C:\Program Files (x86)\Windows Kits\10</WDKPath>
+    <WDKVersion Condition="'$(WDKVersion)' == ''">10.0.26100.0</WDKVersion>
+    <KMDFVersion>1.15</KMDFVersion>
+    <WDKIncludePath>$(WDKPath)\Include\$(WDKVersion)\km</WDKIncludePath>
+    <WDKIncludeSharedPath>$(WDKPath)\Include\$(WDKVersion)\shared</WDKIncludePath>
+    <WDKIncludeUCRTPath>$(WDKPath)\Include\$(WDKVersion)\ucrt</WDKIncludePath>
+    <KMDFIncludePath>$(WDKPath)\Include\wdf\kmdf\$(KMDFVersion)</KMDFIncludePath>
+    <KMDFLibPath>$(WDKPath)\Lib\$(WDKVersion)\wdf\kmdf\x64\$(KMDFVersion)</KMDFLibPath>
+    <WDKLibPath>$(WDKPath)\Lib\$(WDKVersion)\km\x64</WDKLibPath>
+    <KMDF_INC_PATH Condition="'$(KMDF_INC_PATH)' == ''">$(KMDFIncludePath)</KMDF_INC_PATH>
+    <DDK_INC_PATH Condition="'$(DDK_INC_PATH)' == ''">$(WDKIncludePath)</DDK_INC_PATH>
+    <DDK_LIB_PATH Condition="'$(DDK_LIB_PATH)' == ''">$(WDKLibPath)</DDK_LIB_PATH>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(KMDF_INC_PATH);$(DDK_INC_PATH);$(WDKIncludeSharedPath);$(WDKIncludeUCRTPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(KMDFLibPath);$(DDK_LIB_PATH);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

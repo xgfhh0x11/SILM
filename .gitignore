@@ -1,0 +1,65 @@
+# Build outputs
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.exe
+*.sys
+*.cat
+*.pfx
+
+# Visual Studio user/state (NOT project files — those are sources and tracked)
+.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# WDK build artefacts
+*.log
+*.wrn
+*.err
+*.tlog
+*.iobj
+*.ipdb
+*.stampinf
+
+# CMake build directories
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+userspace/build/
+userspace/*.exe
+
+# Driver build output trees
+x64/Release/
+x64/Debug/
+i386/
+amd64/
+driver/x64/
+
+# Generated traces (large, regenerable)
+*.silm-trace
+silm_trace_*.bin
+*.csv
+# ...except the small demo traces shipped with the repo for reproducibility:
+!examples/demo_trace.silm-trace
+!examples/microarch_demo.silm-trace
+
+# IDE state
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
