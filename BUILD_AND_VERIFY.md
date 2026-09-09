@@ -1,9 +1,7 @@
 # SILM (Per-CPU Interrupt Latency Monitor) — Build & Verification
 
-> *Last updated: 2026-05-14 — post P0–P3 fix pass.*
-
-> *Quality gate for the HBO NL portfolio. This file answers:
-> "Is this project buildable, runnable, and behaving as documented?"*
+> *This file answers: "Is this project buildable, runnable, and behaving as
+> documented?"*
 
 SILM is a four-stack research framework:
 
@@ -55,10 +53,13 @@ only one with automated tests.
 
 - **Output artifacts** (all canonical paths):
   - `x64\Release\InterruptLatencyMonitor.sys` — kernel-mode driver image
-    (Spectre-mitigated, KMDF 1.15) — emitted by `build_vs.bat`. This is now
-    the single canonical driver artifact path; the legacy `driver\amd64\…`
-    output is gone (the `build.bat` / `driver\sources` flow was deleted in
-    the 2026-05-14 fix pass).
+    (Spectre-mitigated, KMDF 1.15) — emitted by `build_vs.bat`. This is the
+    single canonical driver artifact path; the legacy `driver\amd64\…`
+    output produced by the old `build.bat` / `driver\sources` /
+    `driver\Makefile` (WDK 7-era `build.exe`) flow does not apply — those
+    files have been removed from the repo (`build.bat` is gone, and
+    `driver\sources` / `driver\Makefile` were deleted along with their
+    inert `<None Include>` references in the `.vcxproj`).
   - `userspace\build\Release\daemon.exe` — trace-recording daemon.
   - `examples\demo_trace.silm-trace` — checked in; reproducible via
     `scripts/generate_sample_trace.py`.
@@ -68,16 +69,16 @@ only one with automated tests.
 
 ### 1.2 Alternative build paths
 
-There are **three** build entry points (post-2026-05-14 consolidation; the
-legacy `build.bat` / `driver\sources` / `driver\Makefile` flow was removed).
-They produce equivalent driver artifacts.
+There are **three** build entry points; the legacy `build.bat` /
+`driver\sources` / `driver\Makefile` (WDK 7-era `build.exe`) flow has been
+removed from the repo. They produce equivalent driver artifacts.
 
 | Entry point                         | Mechanism                                                                                          | Output path                                 | Status                                                                                                                                                                            |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `build_vs.bat` (root)               | Calls `vcvars64.bat` then `msbuild InterruptLatencyMonitor.sln /p:Configuration=Release /p:Platform=x64` | `x64\Release\InterruptLatencyMonitor.sys`   | **Recommended.** Hard-codes WDK 10.0.26100 and VS 2022 Community paths.                                                                                                            |
 | `InterruptLatencyMonitor.sln`       | Open in Visual Studio 2022 and Build Solution (Release\|x64).                                       | `x64\Release\InterruptLatencyMonitor.sys`   | Identical result to `build_vs.bat` — useful for interactive debugging / Driver Verifier setup.                                                                                    |
 | `userspace\CMakeLists.txt`          | CMake + MSVC (or MinGW; CMake handles both, but daemon uses Win32 `<windows.h>` and `DeviceIoControl`). | `userspace\build\<config>\daemon.exe`       | Mandatory for the daemon — there is no `.vcxproj` or `.bat` wrapper for it.                                                                                                       |
-| `install.bat` (root)                | `sc create … type= kernel binPath= "%~dp0x64\Release\InterruptLatencyMonitor.sys"` then `sc start`. | service `InterruptLatencyMonitor` registered | **Aligned with `build_vs.bat`** as of 2026-05-14 — fails fast if the `.sys` is missing, references `build_vs.bat`, and prints the `0xC0000428` / test-signing recipe on failure. No manual `copy` step needed. |
+| `install.bat` (root)                | `sc create … type= kernel binPath= "%~dp0x64\Release\InterruptLatencyMonitor.sys"` then `sc start`. | service `InterruptLatencyMonitor` registered | **Aligned with `build_vs.bat`** — fails fast if the `.sys` is missing, references `build_vs.bat`, and prints the `0xC0000428` / test-signing recipe on failure. No manual `copy` step needed. |
 
 ARM64 and Win32 (x86) configurations are declared in the `.sln` and `.vcxproj`
 but no build script exercises them; treat them as untested.
@@ -169,10 +170,17 @@ Each component is acceptance-tested separately.
   `MicroarchWitness` over `examples/microarch_demo.silm-trace` reports
   `baseline_ratio == 300.0` and `anomaly_count == 43`, exactly as quoted
   in the README.
-- [ ] **GUI launch**: `python gui/GUI.py` opens a matplotlib window with the
-  four panels (Statistics, Graphs, Anomaly, Recommendations,
-  Configuration). With no driver attached, it should degrade gracefully —
-  the trace file path should still be loadable.
+- [ ] **GUI launch**: `python gui/GUI.py` opens a Tk window with the four
+  panels (Statistics, Graphs, Anomaly, Recommendations, Configuration).
+  With no driver attached, it degrades gracefully in the sense that the
+  window still opens and "Connect" fails with a clear error dialog instead
+  of crashing — **but there is currently no way to load a `.silm-trace`
+  file from the GUI at all**: `GUI.py` only polls a live `DriverInterface`
+  connection and never imports `trace_parser`. Replaying/inspecting a
+  recorded trace (`examples/*.silm-trace`) currently requires a separate
+  ad-hoc Python script using `trace_parser.read_trace()` +
+  `StatisticsProcessor`, not the shipped GUI. This is tracked as a roadmap
+  item below, not a shipped feature.
 - [ ] **Service teardown**: `sc stop InterruptLatencyMonitor` followed by
   `sc delete InterruptLatencyMonitor` unloads cleanly; no bugcheck, no
   leaked non-paged pool (verifiable via `!pool` in WinDbg).
@@ -237,43 +245,34 @@ python -m pytest tests\test_microarch_witness.py -v
    needs `bcdedit /set testsigning on` + reboot — a manual, machine-altering
    step that cannot be CI'd, and most evaluators will refuse it on their
    primary machine. Use a throwaway VM.
-3. ~~**`install.bat` path mismatch.** It expects the `.sys` at
-   `driver\InterruptLatencyMonitor.sys`, but `build_vs.bat` deposits it at
-   `x64\Release\` and `build.bat` (legacy) deposits at `driver\amd64\`.
-   You must `copy` it into place first. README's `## Install` section
-   doesn't mention this.~~ **RESOLVED 2026-05-14**: `install.bat` now reads
-   from `%~dp0x64\Release\InterruptLatencyMonitor.sys` (the canonical
-   `build_vs.bat` output), fails fast with a clear message if missing, and
-   prints the `0xC0000428` / test-signing recipe on `sc start` failure.
-4. ~~**Two competing driver build systems.** Modern path is MSBuild via the
-   `.vcxproj` (toolset `WindowsKernelModeDriver10.0`); legacy path is
-   `build.exe` via `driver\sources` + `driver\Makefile`. Modern WDKs no
-   longer ship `build.exe`, so `build.bat` is dead on current installs but
-   still documented in `README.md` (`cd driver && build.bat`).~~
-   **RESOLVED 2026-05-14**: the legacy `build.bat` (WDK 7-era
-   `build -cZ -x64`) was deleted. The canonical and only supported path is
-   `build_vs.bat` → `x64\Release\InterruptLatencyMonitor.sys`. README's
-   build section was updated to match.
+3. **`install.bat` reads the canonical build output.** It reads directly
+   from `%~dp0x64\Release\InterruptLatencyMonitor.sys` (the `build_vs.bat`
+   output), fails fast with a clear message if the file is missing, and
+   prints the `0xC0000428` / test-signing recipe on `sc start` failure. No
+   manual `copy` step is needed.
+4. **Single driver build system.** The only build path is MSBuild via the
+   `.vcxproj` (toolset `WindowsKernelModeDriver10.0`). The legacy WDK 7-era
+   `build.exe`/`build.bat` flow and its `driver\sources` + `driver\Makefile`
+   inputs have been removed from the repo; `build_vs.bat` →
+   `x64\Release\InterruptLatencyMonitor.sys` is the canonical and only
+   supported path, and README's build section matches it.
 5. **Solution GUIDs are placeholders.** Both the project and solution use
    `{12345678-1234-1234-1234-123456789ABC}` / `{87654321-…}` — harmless,
    but a fingerprint of generated boilerplate.
 6. **KMDF 1.15 is conservative.** Modern WDKs default to 1.31+; pinning to
    1.15 maximises compatibility but disables newer KMDF features. Not a
    bug, just a constraint.
-7. ~~**No daemon ↔ driver IOCTL ABI versioning** other than a `silm_trace`
-   `version=1` field. The `IRQ_EVENT` struct is shared between `driver/` and
-   `userspace/` via two **separately maintained** copies of
-   `InterruptLatencyMonitor.h`. Layout drift between the two copies will
-   produce silent data corruption — pin them with a static assert or vendor
-   a single header.~~ **RESOLVED 2026-05-14**: the two copies were
-   consolidated into `shared/InterruptLatencyMonitor_abi.h` (single source
-   of truth for `IRQ_EVENT`, `EVT_PHASE`, the four `IOCTL_*` codes,
-   `IOCTL_GET_EVENTS_IN/OUT`, `IOCTL_STATISTICS`, `IOCTL_CONFIG`). The
-   shared header carries an `IRQ_EVENT_ABI_VERSION` sentinel that must be
-   bumped on any wire-format change. `driver/InterruptLatencyMonitor.h`
-   (now 132 LOC, kernel-only state) and `userspace/InterruptLatencyMonitor.h`
-   (now 16 LOC, thin shim) both `#include` it — layout drift between sides
-   is no longer possible.
+7. **Daemon ↔ driver IOCTL ABI versioning.** `IRQ_EVENT`, `EVT_PHASE`, the
+   four `IOCTL_*` codes, `IOCTL_GET_EVENTS_IN/OUT`, `IOCTL_STATISTICS`, and
+   `IOCTL_CONFIG` are defined once in `shared/InterruptLatencyMonitor_abi.h`
+   (single source of truth), which carries an `IRQ_EVENT_ABI_VERSION`
+   sentinel that must be bumped on any wire-format change.
+   `driver/InterruptLatencyMonitor.h` (kernel-only state) and
+   `userspace/InterruptLatencyMonitor.h` (thin shim) both `#include` it, so
+   the driver-side and daemon-side struct layouts cannot drift apart. Note
+   this does not cover the separate on-disk `.silm-trace` format, whose
+   Python-side parser (`gui/trace_parser.py`) mirrors the C++ struct layout
+   by hand with no equivalent version sentinel.
 8. **Synthetic event source only.** README is explicit that this is a
    pipeline-validation harness, not a real ISR binding. Evaluators looking
    for "this works on my hardware" will get synthetic data — that is
@@ -300,23 +299,19 @@ python -m pytest tests\test_microarch_witness.py -v
 
 ### 3.3 Roadmap
 
+- **Already in place** (no longer open items, kept here for context): a
+  single shared `shared/InterruptLatencyMonitor_abi.h` with an
+  `IRQ_EVENT_ABI_VERSION` sentinel; `install.bat` reading
+  `%~dp0x64\Release\InterruptLatencyMonitor.sys` directly with a fail-fast
+  check; removal of the legacy `build.bat` / `driver\sources` /
+  `driver\Makefile` WDK 7-era build path.
 - **Short-term (≤1 day)**:
   - Make `build_vs.bat` discover VS and WDK via `vswhere` + registry.
-  - ~~Patch `install.bat` to look in `x64\Release\` and `driver\amd64\` for
-    the `.sys`, or have the build scripts copy the artifact into
-    `driver\` automatically.~~ **DONE 2026-05-14** — `install.bat` reads
-    `%~dp0x64\Release\InterruptLatencyMonitor.sys` directly, fails fast if
-    missing.
-  - ~~Consolidate `driver\InterruptLatencyMonitor.h` and
-    `userspace\InterruptLatencyMonitor.h` into a single shared header, or
-    add a `static_assert(sizeof(IRQ_EVENT) == N)` on both sides.~~
-    **DONE 2026-05-14** — both headers now include
-    `shared/InterruptLatencyMonitor_abi.h`; ABI carries an explicit
-    `IRQ_EVENT_ABI_VERSION` sentinel.
-  - ~~Remove or clearly archive the legacy `driver\sources` + `Makefile`
-    build path (and the `build.bat` that drives it) to avoid the
-    documentation mismatch.~~ **DONE 2026-05-14** — `build.bat` deleted;
-    `build_vs.bat` is the canonical entry point, mirrored in README.
+  - Add an equivalent version sentinel (or self-describing header) for the
+    on-disk `.silm-trace` format, so drift between `userspace/daemon.cpp`'s
+    packed struct writes and `gui/trace_parser.py`'s hand-mirrored
+    `struct.pack` format strings is caught automatically rather than only
+    when the size happens to still match.
 - **Medium-term (≤1 week)**:
   - Add Static Driver Verifier (`/sdv`) and CodeAnalysis runs to
     `build_vs.bat` and gate CI on them where possible.
@@ -345,21 +340,28 @@ python -m pytest tests\test_microarch_witness.py -v
 
 | Check                                  | Status   | Notes                                                                                                                                                                                                                                                |
 | -------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| README documents build                 | PASS     | `## Build`, `## Install`, `## Tests` and `## Demo data` sections all present; commands quoted verbatim. Build section updated 2026-05-14 to the single canonical `build_vs.bat` → `install.bat` flow and references the shared ABI header. |
-| Build files present                    | PASS     | `build_vs.bat`, `install.bat`, `InterruptLatencyMonitor.sln`, `driver\*.vcxproj`, `userspace\CMakeLists.txt`, `gui\requirements.txt`, `tests\requirements.txt`, `shared\InterruptLatencyMonitor_abi.h` — all present. Legacy `build.bat` / `driver\sources` / `driver\Makefile` removed 2026-05-14. |
+| README documents build                 | PASS     | `## Build`, `## Install`, `## Tests` and `## Demo data` sections all present; commands quoted verbatim. Build section matches the single canonical `build_vs.bat` → `install.bat` flow and references the shared ABI header. |
+| Build files present                    | PASS     | `build_vs.bat`, `install.bat`, `InterruptLatencyMonitor.sln`, `driver\*.vcxproj`, `userspace\CMakeLists.txt`, `gui\requirements.txt`, `tests\requirements.txt`, `shared\InterruptLatencyMonitor_abi.h` — all present. Legacy `build.bat` / `driver\sources` / `driver\Makefile` are removed from the repo (including the `.vcxproj`'s inert `<None Include>` references to them). |
 | Build files internally consistent      | PASS     | Single canonical path: `build_vs.bat` → `x64\Release\InterruptLatencyMonitor.sys` → `install.bat` (reads `%~dp0x64\Release\…sys`). No legacy alternates, no manual `copy` step. |
-| ABI consistency (driver ↔ userspace)   | PASS     | `IRQ_EVENT`, `EVT_PHASE`, the four `IOCTL_*` codes and their in/out structs live in `shared/InterruptLatencyMonitor_abi.h` (single source of truth, carries `IRQ_EVENT_ABI_VERSION` sentinel). `driver/InterruptLatencyMonitor.h` (132 LOC, kernel-only state) and `userspace/InterruptLatencyMonitor.h` (16 LOC, shim) both include it — drift is structurally impossible. |
+| ABI consistency (driver ↔ userspace)   | PASS     | `IRQ_EVENT`, `EVT_PHASE`, the four `IOCTL_*` codes and their in/out structs live in `shared/InterruptLatencyMonitor_abi.h` (single source of truth, carries `IRQ_EVENT_ABI_VERSION` sentinel). `driver/InterruptLatencyMonitor.h` (kernel-only state) and `userspace/InterruptLatencyMonitor.h` (shim) both include it — drift is structurally impossible. This covers the driver↔daemon wire format only, **not** the separate on-disk `.silm-trace` format (see §3.1 item 7). |
 | Source structure matches README        | PASS     | `driver/InterruptLatencyMonitor.{c,h}` (KMDF), `shared/InterruptLatencyMonitor_abi.h`, `userspace/daemon.cpp` + `CMakeLists.txt`, `gui/{GUI,trace_parser,statistics_processor,policy_engine,microarch_witness}.py`, `scripts/generate_{sample,microarch}_demo.py`, `examples/*.silm-trace`. |
 | Tests exist                            | PASS     | `tests/test_trace_parser.py`, `tests/test_statistics_processor.py`, `tests/test_policy_engine.py`, `tests/test_microarch_witness.py`, plus `conftest.py`.                                                                                            |
 | Test invocation documented             | PASS     | README `## Tests` quotes `python -m pytest tests/ -v` and references `.github/workflows/python-tests.yml` CI.                                                                                                                                        |
 | Output artifacts named in build files  | PASS     | `build_vs.bat` echoes `x64\Release\InterruptLatencyMonitor.sys`; `install.bat` reads the same path; CMake target `daemon` emits `daemon.exe`. Trace file magic `SILM` defined in `userspace/daemon.cpp`. All names agree. |
+| GUI can load a recorded `.silm-trace`  | **FAIL** | `gui/GUI.py` has no trace-file-loading code path (no `trace_parser` import, no "Open Trace" menu item); it only polls a live driver connection. See §2.2 "GUI launch" above. |
+| `IOCTL_GET_STATISTICS` returns real data | **FAIL (by design)** | The kernel handler returns `STATUS_NOT_IMPLEMENTED` unconditionally (`driver/InterruptLatencyMonitor.c`). Kernel-side statistics aggregation is not implemented; all statistics are computed in userspace from raw `IOCTL_GET_EVENTS` output instead. |
+| `QueueDepth` field reflects a real DPC queue | **FAIL (by design)** | `QueryDpcQueueDepth()` in the driver is a stub that always returns `0`; every `IRQ_EVENT.QueueDepth` value produced by the real driver path is `0`. The synthetic trace generators also hardcode `queue_depth=0`. |
 
-Overall status: **PASS.** As of the 2026-05-14 fix pass the Python analysis
-stack remains fully reproducible from a clean checkout on any OS; the driver
-and daemon build cleanly on a properly configured WDK + VS 2022 host and
-`install.bat` now installs the artifact directly out of `x64\Release\` with
-no manual `copy` step. The kernel/userspace ABI is consolidated in a single
-shared header with an explicit version sentinel. The driver must still be
-loaded on a test-signed system (i.e. a throwaway VM), and the synthetic-
-harness scope remains as documented — both are by-design constraints
-appropriate for a research-phase HBO portfolio project.
+Overall status: **PASS on build/test reproducibility**, with three items
+that are documented gaps rather than working features — no GUI trace-file
+loading, `IOCTL_GET_STATISTICS` unimplemented, `QueueDepth` always
+`0` — tracked above and in the README so they are not mistaken for real
+functionality. The Python stack remains fully reproducible from a clean
+checkout on any OS; the driver and daemon build cleanly on a properly
+configured WDK + VS 2022 host and `install.bat` installs the artifact
+directly out of `x64\Release\` with no manual `copy` step. The
+kernel/userspace ABI is consolidated in a single shared header with an
+explicit version sentinel. The driver must still be loaded on a test-signed
+system (i.e. a throwaway VM), and the synthetic-harness scope remains as
+documented — both are by-design constraints appropriate for a research-phase
+project.

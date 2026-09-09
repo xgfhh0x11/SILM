@@ -24,11 +24,11 @@ detection (CUSUM, Page 1954) over an EWMA-tracked baseline.
 ## Design
 
 ```
-                    +----------------------+
-                    |   Userspace Daemon   |
-                    |   (CUSUM, EWMA,      |
-                    |    p50/p95/p99)      |
-                    +----------+-----------+
+                    +----------------------+      +----------------------+
+                    |   Userspace Daemon   | ---> |  Python Analysis     |
+                    |  (raw event recorder,|.silm |  Layer (CUSUM, EWMA, |
+                    |   writes .silm-trace)| trace|   p50/p95/p99)       |
+                    +----------+-----------+      +----------------------+
                                ^
                        IOCTL_GET_EVENTS
                                |
@@ -55,23 +55,39 @@ detection (CUSUM, Page 1954) over an EWMA-tracked baseline.
 - Per-CPU lock-free ring buffers (`RING_BUFFER_SIZE = 4096`, power-of-two mask,
   `InterlockedIncrement` head pointer).
 - Five event phases tracked: `ISR_START`, `ISR_END`, `DPC_QUEUE`, `DPC_START`,
-  `DPC_END`. Each event records vector ID, CPU number, queue depth at sample
-  time, `KeQueryPerformanceCounter()` timestamp, and an optional `RDTSC` value
-  gated on invariant-TSC capability detection.
-- IOCTL surface: `IOCTL_GET_EVENTS`, `IOCTL_GET_STATISTICS`, `IOCTL_SET_CONFIG`.
+  `DPC_END`. Each event records vector ID, CPU number, a `QueueDepth` field,
+  `KeQueryPerformanceCounter()` timestamp, and an optional `RDTSC` value
+  gated on invariant-TSC capability detection. **`QueueDepth` is currently
+  always `0`**: `QueryDpcQueueDepth()` in the driver is an explicit stub
+  (accessing the kernel's real DPC queue depth needs kernel structures that
+  aren't directly exposed) and every synthetic trace generator also hardcodes
+  `queue_depth=0`. Treat the field as reserved, not a measured quantity, until
+  that stub is implemented.
+- IOCTL surface: `IOCTL_GET_EVENTS`, `IOCTL_GET_STATISTICS`, `IOCTL_SET_CONFIG`,
+  `IOCTL_RESET_BUFFERS`. **`IOCTL_GET_STATISTICS` is not implemented** — the
+  kernel handler unconditionally returns `STATUS_NOT_IMPLEMENTED`; all
+  statistics in this project are computed by `gui/statistics_processor.py`
+  from raw `IOCTL_GET_EVENTS` output (relayed to it via the `.silm-trace`
+  files the daemon records), not from a kernel-side aggregation path.
 
 **Userspace daemon (C++):**
 
-- Pairs `ISR_START`/`ISR_END` and `ISR_START`/`DPC_START`/`DPC_END` events by
-  `(vector, sequence)` to compute three latency populations per CPU:
-  ISR duration, ISR→DPC dispatch delay, end-to-end ISR→DPC_END.
-- Maintains per-CPU EWMA, CUSUM, and percentile estimators (p50/p95/p99) at
-  100 ms collection cadence.
-- Emits structured statistics over the IOCTL channel for any consumer.
+- Opens the driver handle, enables instrumentation via `IOCTL_SET_CONFIG`,
+  and drains raw events per CPU via `IOCTL_GET_EVENTS`.
+- Writes the raw event stream, unmodified, to a packed-binary `.silm-trace`
+  file (header + fixed-layout records — see `userspace/daemon.cpp`).
+- Does **not** pair events, compute latencies, or run EWMA/CUSUM itself —
+  by design, all of that analysis (pairing `ISR_START`/`ISR_END` and
+  `ISR_START`/`DPC_START`/`DPC_END` by `(vector, CPU, sequence)`, percentile and
+  EWMA/CUSUM estimation) lives in the Python analysis layer below, to keep
+  a single source of truth for the analytics rather than duplicating it in
+  C++.
 
 **Analysis layer (Python):**
 
-- `statistics_processor.py` — percentile and EWMA refresh from event batches.
+- `statistics_processor.py` — pairs ISR/DPC events by `(vector, CPU, sequence)`,
+  maintains per-CPU EWMA, CUSUM, and percentile (p50/p95/p99) estimators,
+  refreshed from event batches.
 - `policy_engine.py` — rule-based recommendations (high P99, CPU imbalance,
   CUSUM anomaly) with priority sorting.
 - `GUI.py` — matplotlib panels for latency-over-time, distribution, CPU
@@ -84,7 +100,8 @@ driver implements:
 
 - `StartSyntheticInterruptSource()` — a `KeSetTimerEx`-driven periodic source
   that posts paired ISR/DPC events into the per-CPU rings, used to exercise the
-  end-to-end stack (kernel ring buffer → IOCTL → daemon → CUSUM → recommendation).
+  end-to-end stack (kernel ring buffer → IOCTL → daemon → `.silm-trace` →
+  Python analysis (CUSUM) → recommendation).
 
 This design separates the *measurement plumbing* (which is fully implemented
 and testable in isolation) from the *interrupt source* (which is pluggable).
@@ -109,7 +126,8 @@ It does:
 
 - Produce reproducible per-CPU latency traces at event-level resolution.
 - Flag change-points in the latency distribution as candidates for review.
-- Expose quantitative metrics (percentiles, queue depth, CPU share) that other
+- Expose quantitative metrics (percentiles, CPU share, and a reserved
+  `QueueDepth` field — currently always `0`, see below) that other
   detection layers can consume.
 
 The intended consumer is a forensic or research analyst, not an automated
@@ -125,11 +143,25 @@ boundaries, with both QPC and invariant-TSC sources, is a candidate substrate
 for empirical study of such leakage observable from the OS layer without
 specialized hardware.
 
-## Preliminary findings: TSC/QPC ratio as a microarchitectural witness
+## Synthetic sanity check: TSC/QPC ratio as a microarchitectural witness
 
-A first concrete result of the framework is a robust per-event detector
-based on the dual-clock recording: for each pair of consecutive
-instrumented events `i-1, i`, the ratio
+> **This is a self-consistency / round-trip check on synthetic data, not an
+> empirical hardware finding.** The demo generator
+> (`scripts/generate_microarch_demo.py`) *computes* each event's `tsc_value`
+> deterministically as `qpc * TSC_PER_QPC * tsc_scale` — i.e. it plants the
+> exact ratio the detector below is designed to recover, then perturbs that
+> ratio inside a chosen window. The detector correctly recovers its own
+> planted constant (`mad == 0.0` — a degenerate/toy-data signature; real
+> noisy hardware telemetry would essentially never produce `MAD == 0` over
+> 400+ samples) and flags exactly the planted perturbation window. That
+> demonstrates the detector's arithmetic is correct — it is a unit test of
+> `MicroarchWitness`, not evidence about real timing side-channel behavior on
+> hardware. No real hardware measurement has been collected yet; see
+> "Bare-metal validation roadmap" below for what that would take.
+
+The framework includes a robust per-event detector based on the dual-clock
+recording: for each pair of consecutive instrumented events `i-1, i`, the
+ratio
 
     r_i = (tsc[i] - tsc[i-1]) / (qpc[i] - qpc[i-1])
 

@@ -474,17 +474,31 @@ VOID EvtIoDeviceControl(
 
         {
             PPERCPU_RING ring = GetPerCpuRing(getEventsIn->CpuNumber);
-            ULONG maxEvents = (ULONG)(OutputBufferLength - FIELD_OFFSET(IOCTL_GET_EVENTS_OUT, Events)) / sizeof(IRQ_EVENT);
-            ULONG eventsToCopy = min(maxEvents, RING_BUFFER_SIZE);
-            ULONG currentHead = (ULONG)InterlockedOr((volatile LONG*)&ring->Head, 0); // Read current head
-            ULONG currentTail = (ULONG)InterlockedOr((volatile LONG*)&ring->Tail, 0); // Read current tail
+            ULONG maxEvents;
+            ULONG eventsToCopy;
+            ULONG currentHead;
+            ULONG currentTail;
             ULONG i;
             ULONG64 lastSequence = 0;
 
+            // Validate and retrieve the output buffer BEFORE doing any
+            // arithmetic derived from the caller-supplied OutputBufferLength.
+            // WdfRequestRetrieveOutputBuffer's minimum-size check guarantees
+            // OutputBufferLength >= sizeof(IOCTL_GET_EVENTS_OUT), which is
+            // strictly greater than FIELD_OFFSET(IOCTL_GET_EVENTS_OUT, Events)
+            // (EventCount precedes Events in the struct), so the subtraction
+            // below can no longer underflow. Previously maxEvents was computed
+            // from the unvalidated OutputBufferLength first, which would wrap
+            // to a huge size_t for an undersized output buffer.
             status = WdfRequestRetrieveOutputBuffer(Request, sizeof(IOCTL_GET_EVENTS_OUT), (PVOID*)&getEventsOut, NULL);
             if (!NT_SUCCESS(status)) {
                 break;
             }
+
+            maxEvents = (ULONG)(OutputBufferLength - FIELD_OFFSET(IOCTL_GET_EVENTS_OUT, Events)) / sizeof(IRQ_EVENT);
+            eventsToCopy = min(maxEvents, RING_BUFFER_SIZE);
+            currentHead = (ULONG)InterlockedOr((volatile LONG*)&ring->Head, 0); // Read current head
+            currentTail = (ULONG)InterlockedOr((volatile LONG*)&ring->Tail, 0); // Read current tail
 
             // Copy events from ring buffer
             // Start from Tail (or StartIndex if provided) and read up to Head
@@ -495,12 +509,20 @@ VOID EvtIoDeviceControl(
             for (i = 0; i < eventsToCopy; i++) {
                 ULONG idx = (startIdx + i) & ring->Mask;
                 
-                // Check for sequence gaps (lost events)
+                // Check for sequence gaps (lost events).
+                // DEAD CODE / intentional no-op: this branch deliberately does
+                // nothing on the kernel side. Gap detection is performed
+                // independently in userspace (gui/statistics_processor.py)
+                // from the same monotonic SequenceId field returned in each
+                // IRQ_EVENT, so no kernel-side action is required here. Left
+                // in place as a documented observation point, not a bug to
+                // "finish" -- do not add kernel-side handling without a
+                // concrete reason userspace's detection is insufficient.
                 if (i > 0 && lastSequence > 0) {
                     ULONG64 expectedSeq = lastSequence + 1;
                     if (ring->Buffer[idx].SequenceId != expectedSeq && ring->Buffer[idx].SequenceId != 0) {
-                        // Sequence gap detected - events were lost
-                        // This will be handled by userspace
+                        // Sequence gap detected - events were lost.
+                        // Intentionally no-op; see comment above.
                     }
                 }
                 
@@ -582,6 +604,17 @@ VOID EvtIoDeviceControl(
 //
 // Interrupt Service Routine
 //
+// DEAD CODE (currently unreachable): this handler is fully implemented and
+// declared in the header (EVT_WDF_INTERRUPT_ISR), but nothing in this driver
+// ever calls WdfInterruptCreate to bind it to a real interrupt object --
+// CreateInterruptObject() only starts the synthetic KeSetTimerEx harness
+// (see SyntheticTimerDpc/SyntheticWorkDpc below), which is the only event
+// source that runs in the current build. Binding this handler to a real
+// target interrupt via WdfInterruptCreate is the documented next step
+// (README "Limitations and Roadmap" #1) and is intentionally NOT done here:
+// it requires a specific target device/interrupt resource and real hardware
+// to validate, which is untestable in this environment.
+//
 BOOLEAN EvtInterruptIsr(
     _In_ WDFINTERRUPT Interrupt,
     _In_ ULONG MessageID
@@ -625,6 +658,9 @@ BOOLEAN EvtInterruptIsr(
 
 //
 // Deferred Procedure Call
+//
+// DEAD CODE (currently unreachable): same status as EvtInterruptIsr above --
+// never bound via WdfInterruptCreate, so it never runs in the current build.
 //
 VOID EvtInterruptDpc(
     _In_ WDFINTERRUPT Interrupt,
@@ -760,6 +796,13 @@ VOID InitializeTscState(VOID)
 
 //
 // Check if TSC is invariant (doesn't change with CPU frequency scaling)
+//
+// DEAD CODE: never called anywhere in this driver. ShouldUseTscInIsr()
+// below inlines the same g_TscState.IsInvariant && g_TscState.IsInitialized
+// check directly rather than calling this helper. Kept as documented,
+// unused API surface rather than removed, in case a future caller wants the
+// invariant-TSC check in isolation from ShouldUseTscInIsr()'s additional
+// UseRdtsc config gate.
 //
 BOOLEAN IsInvariantTsc(VOID)
 {

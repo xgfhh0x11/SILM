@@ -24,7 +24,7 @@ def CTL_CODE(DeviceType, Function, Method, Access):
 
 IOCTL_BASE = 0x8000
 IOCTL_GET_EVENTS = CTL_CODE(FILE_DEVICE_UNKNOWN, IOCTL_BASE + 0x01, METHOD_BUFFERED, FILE_ANY_ACCESS)
-IOCTL_GET_STATISTICS = CTL_CODE(FILE_DEVICE_UNKNOWN, IOCTL_BASE + 0x02, METHOD_BUFFERED, FILE_ANY_ACCESS)
+IOCTL_GET_STATISTICS = CTL_CODE(FILE_DEVICE_UNKNOWN, IOCTL_BASE + 0x02, METHOD_BUFFERED, FILE_ANY_ACCESS)  # NOT IMPLEMENTED: kernel handler always returns STATUS_NOT_IMPLEMENTED; see get_statistics() below.
 IOCTL_RESET_BUFFERS = CTL_CODE(FILE_DEVICE_UNKNOWN, IOCTL_BASE + 0x03, METHOD_BUFFERED, FILE_ANY_ACCESS)
 IOCTL_SET_CONFIG = CTL_CODE(FILE_DEVICE_UNKNOWN, IOCTL_BASE + 0x04, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
@@ -199,7 +199,17 @@ class DriverInterface:
             return []
     
     def get_statistics(self, cpu_number):
-        """Fetch statistics for a CPU"""
+        """Fetch statistics for a CPU via IOCTL_GET_STATISTICS.
+
+        NOT IMPLEMENTED on the driver side: the kernel handler for
+        IOCTL_GET_STATISTICS (driver/InterruptLatencyMonitor.c) unconditionally
+        returns STATUS_NOT_IMPLEMENTED, so DeviceIoControl below always fails
+        and this method always returns None against a real driver. It is also
+        currently unused -- gui/GUI.py computes statistics itself via
+        StatisticsProcessor from raw IOCTL_GET_EVENTS output instead of
+        calling this method. Kept as documented, inert API surface for the
+        day IOCTL_GET_STATISTICS is implemented in the kernel.
+        """
         if not self.connected:
             return None
         

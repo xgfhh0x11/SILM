@@ -105,6 +105,11 @@ EVT_WDF_DRIVER_DEVICE_ADD EvtDeviceAdd;
 EVT_WDF_DEVICE_FILE_CREATE EvtDeviceFileCreate;
 EVT_WDF_FILE_CLOSE EvtDeviceFileClose;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL EvtIoDeviceControl;
+// Real-ISR handlers. Fully implemented but currently DEAD CODE: no
+// WdfInterruptCreate call anywhere in this driver binds them to an
+// interrupt object, so they never run in the current build (only the
+// synthetic KeSetTimerEx harness below does). See the comments above their
+// definitions in InterruptLatencyMonitor.c.
 EVT_WDF_INTERRUPT_ISR EvtInterruptIsr;
 EVT_WDF_INTERRUPT_DPC EvtInterruptDpc;
 
@@ -127,8 +132,8 @@ extern SYNTHETIC_INTERRUPT_STATE     g_SyntheticState;
 // =================================================================
 
 __forceinline VOID WriteEvent(_In_ PIRQ_EVENT Event, _In_ ULONG Cpu);
-ULONG QueryDpcQueueDepth(VOID);
-BOOLEAN IsInvariantTsc(VOID);
+ULONG QueryDpcQueueDepth(VOID);  // Stub: always returns 0, see definition.
+BOOLEAN IsInvariantTsc(VOID);    // Dead code: never called, see definition.
 ULONG64 ReadTsc(VOID);
 VOID InitializeTscState(VOID);
 BOOLEAN ShouldUseTscInIsr(VOID);

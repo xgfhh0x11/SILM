@@ -407,10 +407,6 @@
     <Inf Include="InterruptLatencyMonitor.inf" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="sources" />
-    <None Include="Makefile" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Driver Files">
       <UniqueIdentifier>{12345678-1234-1234-1234-123456789DEF}</UniqueIdentifier>
     </Filter>
@@ -441,14 +437,6 @@
     <Inf Include="InterruptLatencyMonitor.inf">
       <Filter>Driver Files\Inf</Filter>
     </Inf>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="sources">
-      <Filter>Build Files</Filter>
-    </None>
-    <None Include="Makefile">
-      <Filter>Build Files</Filter>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(VCTargetsPath)\BuildCustomizations\WDK.targets" Condition="Exists('$(VCTargetsPath)\BuildCustomizations\WDK.targets')" />

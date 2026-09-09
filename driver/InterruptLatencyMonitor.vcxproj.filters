@@ -32,13 +32,5 @@
       <Filter>Driver Files\Inf</Filter>
     </Inf>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="sources">
-      <Filter>Build Files</Filter>
-    </None>
-    <None Include="Makefile">
-      <Filter>Build Files</Filter>
-    </None>
-  </ItemGroup>
 </Project>
 
