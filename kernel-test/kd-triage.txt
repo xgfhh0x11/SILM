@@ -1,0 +1,146 @@
+SILM / InterruptLatencyMonitor -- kd.exe (kdnet) triage cheat sheet
+====================================================================
+For use on the HOST against the disposable "WinKDbg" guest, connected
+over a kdnet (network) debug link. Reference only -- copy/paste the
+lines you need into your kd.exe session. See README.md for how to get
+PORT/KEY and how to launch kd.exe in the first place.
+
+------------------------------------------------------------------
+0. Connect (host)
+------------------------------------------------------------------
+kd -k net:port=<PORT>,key=<KEY>
+
+  Wait for the initial break-in ("Waiting to reconnect..." then a
+  kernel prompt). If it never connects: check the guest actually
+  rebooted after `bcdedit /dbgsettings` + `bcdedit /debug on`, check
+  the Hyper-V switch/NIC used by kdnet is the one actually attached
+  to the VM, and check host firewall isn't blocking the debug port.
+
+------------------------------------------------------------------
+1. First things after any break-in
+------------------------------------------------------------------
+.symfix
+.reload
+.reload /f
+lm                              ; list loaded modules -- confirm
+lm m InterruptLatencyMonitor    ; is our driver loaded at all
+!drvobj InterruptLatencyMonitor 2
+                                 ; driver object, device objects, flags
+!devobj \Device\InterruptLatencyMonitor
+                                 ; if you know the device object name
+
+------------------------------------------------------------------
+2. On a bugcheck (this is the common case with an in-development
+   kernel driver -- expect it, that's what the checkpoint is for)
+------------------------------------------------------------------
+!analyze -v                     ; always start here
+kb                               ; stack of the crashing thread (if
+                                 ; !analyze's own stack looks wrong/
+                                 ; truncated)
+!thread                          ; current thread detail
+!irp <address>                   ; if !analyze names an IRP, inspect it
+!process 0 0                     ; process list, for context
+
+If !analyze -v blames InterruptLatencyMonitor.sys directly:
+  lm m InterruptLatencyMonitor    ; confirm the build/timestamp matches
+                                   ; the .sys you just loaded (catch
+                                   ; stale-symbol confusion)
+  !lmi InterruptLatencyMonitor    ; module image info
+  ln <faulting address>           ; nearest symbol to the fault
+
+Known first-suspect code paths in this driver (see review notes):
+  - EvtIoDeviceControl's IOCTL_GET_EVENTS branch
+    (InterruptLatencyMonitor.c ~440-547): output-buffer size handling.
+  - WriteEvent (~721+): lock-free ring buffer writer, runs at
+    DISPATCH_LEVEL from the synthetic timer DPC chain.
+  - SyntheticTimerDpc / SyntheticWorkDpc: the only event source that
+    actually runs in this build (EvtInterruptIsr / EvtInterruptDpc are
+    unreachable dead code -- never bound via WdfInterruptCreate).
+  - g_Config / g_InstrumentationEnabled: written at PASSIVE_LEVEL from
+    IOCTL_SET_CONFIG, read at DISPATCH_LEVEL from the DPCs, with no
+    interlocked access -- a known benign-looking race, worth a second
+    look if a bugcheck involves torn config state.
+
+After capturing !analyze -v output, checkpoint-revert the guest rather
+than trying to keep debugging the same crashed instance for long --
+it's disposable, use that.
+
+------------------------------------------------------------------
+3. Driver Verifier (enable BEFORE loading the driver, from the guest,
+   requires a reboot to take effect -- do this on a fresh checkpoint)
+------------------------------------------------------------------
+Guest, elevated cmd/PowerShell:
+  verifier /standard /driver InterruptLatencyMonitor.sys
+  shutdown /r /t 0
+
+  (Checkpoint again after the Verifier-enabled reboot, before loading
+  the driver, so a Verifier-detected bugcheck is cheap to iterate on.)
+
+After the reboot, load the driver as usual (kernel-test/load.ps1 -Arm)
+with kd already attached -- Verifier bugchecks are typically immediate
+and precise (pool corruption, IRQL violations, etc.), and !analyze -v
+will usually name the exact violation type (e.g. IRQL_NOT_LESS_OR_EQUAL,
+DRIVER_VERIFIER_DETECTED_VIOLATION).
+
+Check Verifier is active / see what it's flagged so far:
+  verifier /query
+Guest-side disable + reboot when done:
+  verifier /reset
+  shutdown /r /t 0
+
+------------------------------------------------------------------
+4. Service / IOCTL-level triage (driver loaded, not crashed, but
+   misbehaving -- e.g. smoke-test.ps1 reports FAIL/TIMEOUT)
+------------------------------------------------------------------
+!devobj \Device\InterruptLatencyMonitor 7  ; verbose device object dump,
+                                             ; look at pending IRP queue
+!qlocks                                     ; contention check
+!locks                                      ; held resources
+!running                                    ; what's running on each CPU
+                                             ; right now (check whether
+                                             ; a thread is actually stuck
+                                             ; inside EvtIoDeviceControl
+                                             ; or the DPC handlers)
+.reload
+lm m InterruptLatencyMonitor
+u InterruptLatencyMonitor!EvtIoDeviceControl
+                                             ; disassemble the IOCTL
+                                             ; dispatcher if you need to
+                                             ; confirm which branch a
+                                             ; stuck thread is in
+
+If smoke-test.ps1 reported TIMEOUT on IOCTL_GET_EVENTS specifically:
+  check the per-CPU ring's Head/Tail via the driver's globals (needs
+  symbols): dt InterruptLatencyMonitor!g_PerCpuRings, or step through
+  EvtIoDeviceControl's IOCTL_GET_EVENTS case with bp/p to see if the
+  copy loop (~509-537) is spinning.
+
+------------------------------------------------------------------
+5. Unload / cleanup triage (after unload.ps1, confirming a clean
+   stop before trusting the next iteration's results)
+------------------------------------------------------------------
+lm m InterruptLatencyMonitor    ; should report "no matching modules
+                                  ; found" after a clean sc delete +
+                                  ; the driver actually unloading
+!drvobj InterruptLatencyMonitor  ; if it still resolves, the driver
+                                  ; object is still resident -- some
+                                  ; reference (open handle, pending
+                                  ; IRP) is keeping it from unloading;
+                                  ; do not assume next-run cleanliness,
+                                  ; revert the checkpoint instead
+
+------------------------------------------------------------------
+6. Reminders
+------------------------------------------------------------------
+- IOCTL_GET_STATISTICS always returns STATUS_NOT_IMPLEMENTED by design
+  (InterruptLatencyMonitor.c:527-533, not a bug) -- don't spend triage
+  time on it.
+- QueryDpcQueueDepth() always returns 0 (InterruptLatencyMonitor.c:
+  722-729, hardcoded placeholder) -- a QueueDepth of 0 in every IRQ_EVENT
+  is expected, not evidence of a stuck queue.
+- EvtInterruptIsr / EvtInterruptDpc are fully implemented but DEAD CODE
+  in this build (never bound via WdfInterruptCreate) -- do not expect to
+  see them hit in a stack trace; only SyntheticTimerDpc / SyntheticWorkDpc
+  run.
+- Any bugcheck is a signal to revert the checkpoint, not to keep poking
+  the same crashed guest.
