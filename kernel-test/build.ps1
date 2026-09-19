@@ -18,15 +18,25 @@
 .PARAMETER VsDevCmdPath
     Optional explicit path to vcvars64.bat, if auto-detection fails.
 
+.PARAMETER TestCertificateThumbprint
+    Optional. If the host's certificate store has more than one code-signing
+    test certificate, MSBuild's auto TestSign step fails with "SignTool
+    error: Multiple certificates were found" instead of picking one. Pass
+    the SHA1 thumbprint of the specific certificate to use (see
+    Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert) to disambiguate.
+    This is forwarded as /p:TestCertificate=<thumbprint> to MSBuild.
+
 .EXAMPLE
     .\build.ps1
     .\build.ps1 -VsDevCmdPath 'C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat'
+    .\build.ps1 -TestCertificateThumbprint AA30F23DAABE6F52330C3B662A4504AF082F0FF3
 #>
 
 [CmdletBinding()]
 param(
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
-    [string]$VsDevCmdPath
+    [string]$VsDevCmdPath,
+    [string]$TestCertificateThumbprint
 )
 
 $ErrorActionPreference = 'Stop'
@@ -82,9 +92,15 @@ Write-Host "Using VC vars: $vcvars"
 # msbuild resolves the WDK-aware PlatformToolset (WindowsKernelModeDriver10.0).
 $logPath = Join-Path $env:TEMP "silm-build-$(Get-Date -Format yyyyMMdd-HHmmss).log"
 
+$msbuildProps = '/p:Configuration=Release /p:Platform=x64'
+if ($TestCertificateThumbprint) {
+    $msbuildProps += " /p:TestCertificate=$TestCertificateThumbprint"
+    Write-Host "Using test-signing certificate thumbprint: $TestCertificateThumbprint"
+}
+
 $cmdArgs = @(
     '/c'
-    "call `"$vcvars`" >nul && msbuild `"$slnPath`" /p:Configuration=Release /p:Platform=x64 /t:Build /v:normal /nologo"
+    "call `"$vcvars`" >nul && msbuild `"$slnPath`" $msbuildProps /t:Build /v:normal /nologo"
 )
 
 Write-Section 'Running MSBuild (Release|x64)'
