@@ -17,7 +17,7 @@
       IOCTL_GET_EVENTS       - REAL. Drains the per-CPU lock-free ring buffer.
                                Exercised, per logical CPU.
       IOCTL_RESET_BUFFERS    - REAL. Zeroes all per-CPU rings. Exercised.
-      IOCTL_GET_STATISTICS   - STUB. InterruptLatencyMonitor.c:527-533
+      IOCTL_GET_STATISTICS   - STUB. InterruptLatencyMonitor.c:549-555
                                unconditionally returns STATUS_NOT_IMPLEMENTED.
                                This script calls it and EXPECTS that failure;
                                it is reported as SKIP (known stub), not a
@@ -25,7 +25,7 @@
                                driver change worth investigating, and is
                                flagged loudly.
 
-    QueryDpcQueueDepth() (InterruptLatencyMonitor.c:722-729) is a separate,
+    QueryDpcQueueDepth() (InterruptLatencyMonitor.c:758-765) is a separate,
     unrelated stub (always returns 0) inside the real ISR/DPC path, which is
     itself dead code in this build (no WdfInterruptCreate binding -- see
     README). It has no IOCTL of its own; it just means QueueDepth in every
@@ -301,7 +301,7 @@ try {
 
     # ---------------------------------------------------------------
     # 4. IOCTL_GET_STATISTICS -- documented STUB. Expected to fail with
-    #    STATUS_NOT_IMPLEMENTED (InterruptLatencyMonitor.c:527-533).
+    #    STATUS_NOT_IMPLEMENTED (InterruptLatencyMonitor.c:549-555).
     #    Report as SKIP, not FAIL, unless it unexpectedly succeeds.
     # ---------------------------------------------------------------
     $statsOutSize = 4 + (8 * 8)  # generously sized; driver never writes to it today
@@ -309,7 +309,7 @@ try {
     if ($r.TimedOut) {
         Add-Result 'IOCTL_GET_STATISTICS' 'TIMEOUT' "no response within ${TimeoutMs}ms (stub should fail fast -- investigate)"
     } elseif ($r.Ok) {
-        Add-Result 'IOCTL_GET_STATISTICS' 'FAIL' 'UNEXPECTED SUCCESS -- source says this is STATUS_NOT_IMPLEMENTED (InterruptLatencyMonitor.c:527-533); driver behavior no longer matches this script''s assumption, re-check before trusting this IOCTL'
+        Add-Result 'IOCTL_GET_STATISTICS' 'FAIL' 'UNEXPECTED SUCCESS -- source says this is STATUS_NOT_IMPLEMENTED (InterruptLatencyMonitor.c:549-555); driver behavior no longer matches this script''s assumption, re-check before trusting this IOCTL'
     } else {
         Add-Result 'IOCTL_GET_STATISTICS' 'SKIP' "not implemented in driver (Win32 error $($r.Win32Error)), as documented -- expected"
     }

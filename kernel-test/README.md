@@ -31,7 +31,7 @@ and dry-runs otherwise.
 - KMDF version: 1.15 (`driver/InterruptLatencyMonitor.inf`)
 - IOCTLs (`shared/InterruptLatencyMonitor_abi.h`, `IOCTL_BASE = 0x8000`):
   - `IOCTL_GET_EVENTS` (0x8001) -- **real**, drains a per-CPU ring buffer.
-  - `IOCTL_GET_STATISTICS` (0x8002) -- **stub**. `driver/InterruptLatencyMonitor.c:527-533`
+  - `IOCTL_GET_STATISTICS` (0x8002) -- **stub**. `driver/InterruptLatencyMonitor.c:549-555`
     unconditionally returns `STATUS_NOT_IMPLEMENTED`. Not wired to any
     real aggregation. `smoke-test.ps1` calls it and expects that failure.
   - `IOCTL_RESET_BUFFERS` (0x8003) -- **real**, zeroes all per-CPU rings.

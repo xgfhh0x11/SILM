@@ -133,10 +133,10 @@ lm m InterruptLatencyMonitor    ; should report "no matching modules
 6. Reminders
 ------------------------------------------------------------------
 - IOCTL_GET_STATISTICS always returns STATUS_NOT_IMPLEMENTED by design
-  (InterruptLatencyMonitor.c:527-533, not a bug) -- don't spend triage
+  (InterruptLatencyMonitor.c:549-555, not a bug) -- don't spend triage
   time on it.
 - QueryDpcQueueDepth() always returns 0 (InterruptLatencyMonitor.c:
-  722-729, hardcoded placeholder) -- a QueueDepth of 0 in every IRQ_EVENT
+  758-765, hardcoded placeholder) -- a QueueDepth of 0 in every IRQ_EVENT
   is expected, not evidence of a stuck queue.
 - EvtInterruptIsr / EvtInterruptDpc are fully implemented but DEAD CODE
   in this build (never bound via WdfInterruptCreate) -- do not expect to
