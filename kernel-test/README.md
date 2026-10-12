@@ -89,7 +89,7 @@ Per the code review (see repo root review notes) and confirmed by reading
 ### 1. Build on the host
 
 ```powershell
-cd C:\Users\tylersec\Desktop\gh-review\SILM\kernel-test
+cd <repo>\kernel-test
 .\build.ps1
 ```
 
